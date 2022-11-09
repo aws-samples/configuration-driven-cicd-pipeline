@@ -1,0 +1,12 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - aws cloudformation package --template-file petstore-api.yaml
+                                   --s3-bucket ${ARTIFACT_BUCKET}
+                                   --s3-prefix api-code
+                                   --output-template-file packagedtemplate.yaml
+artifacts:
+  type: zip
+  files:
+    - packagedtemplate.yaml

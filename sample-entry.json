@@ -1,0 +1,177 @@
+{
+  "RepoName": {
+    "S": "sample-application-repo"
+  },
+  "RepoTag": {
+    "S": "main"
+  },
+  "BuildImage": {
+    "S": "aws/codebuild/standard:3.0"
+  },
+  "BuildSpecFile": {
+    "S": "buildspec.yaml"
+  },
+  "DeploymentConfigurations": {
+    "M": {
+      "Alpha": {
+        "M": {
+          "AlphaAwsAccountId": {
+            "S": "<alpha-aws-account-id>"
+          },
+          "DeployAlpha": {
+            "S": "true"
+          },
+          "ManualApprovalAlpha": {
+            "S": "<email-address>"
+          },
+          "Tests": {
+            "M": {
+              "AlphaBackendTests": {
+                "M": {
+                  "AlphaBackendTestBranch": {
+                    "S": "main"
+                  },
+                  "AlphaBackendTestBuildImage": {
+                    "S": "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+                  },
+                  "AlphaBackendTestBuildSpec": {
+                    "S": "02codebuild/automated-tests-buildspec.yml"
+                  },
+                  "AlphaBackendTestRepository": {
+                    "S": "automated-tests-repo"
+                  },
+                  "RunAlphaBackendTests": {
+                    "S": "true"
+                  }
+                }
+              },
+              "AlphaGuiTests": {
+                "M": {
+                  "AlphaGuiTestBranch": {
+                    "S": "main"
+                  },
+                  "AlphaGuiTestBuildImage": {
+                    "S": "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+                  },
+                  "AlphaGuiTestBuildSpec": {
+                    "S": "02codebuild/automated-tests-buildspec.yml"
+                  },
+                  "AlphaGuiTestRepository": {
+                    "S": "automated-tests-repo"
+                  },
+                  "RunAlphaGuiTests": {
+                    "S": "true"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Beta": {
+        "M": {
+          "BetaAwsAccountId": {
+            "S": "<beta-aws-account-id>"
+          },
+          "DeployBeta": {
+            "S": "true"
+          },
+          "ManualApprovalBeta": {
+            "S": "<email-address>"
+          },
+          "Tests": {
+            "M": {
+              "BetaIntegrationTests": {
+                "M": {
+                  "BetaIntegrationTestBranch": {
+                    "S": "main"
+                  },
+                  "BetaIntegrationTestBuildImage": {
+                    "S": "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+                  },
+                  "BetaIntegrationTestBuildSpec": {
+                    "S": "02codebuild/automated-tests-buildspec.yml"
+                  },
+                  "BetaIntegrationTestRepository": {
+                    "S": "automated-tests-repo"
+                  },
+                  "RunBetaIntegrationTests": {
+                    "S": "true"
+                  }
+                }
+              },
+              "BetaLoadTests": {
+                "M": {
+                  "BetaLoadTestBranch": {
+                    "S": "main"
+                  },
+                  "BetaLoadTestBuildImage": {
+                    "S": "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+                  },
+                  "BetaLoadTestBuildSpec": {
+                    "S": "02codebuild/automated-tests-buildspec.yml"
+                  },
+                  "BetaLoadTestRepository": {
+                    "S": "automated-tests-repo"
+                  },
+                  "RunBetaLoadTests": {
+                    "S": "false"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Gamma": {
+        "M": {
+          "DeployGamma": {
+            "S": "false"
+          },
+          "GammaAwsAccountId": {
+            "S": "<gamma-aws-account-id>"
+          },
+          "ManualApprovalGamma": {
+            "S": "<email-address>"
+          },
+          "Tests": {
+            "M": {
+              "GammaPerformanceTests": {
+                "M": {
+                  "GammaPerformanceTestBranch": {
+                    "S": "dev"
+                  },
+                  "GammaPerformanceTestBuildImage": {
+                    "S": "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+                  },
+                  "GammaPerformanceTestBuildSpec": {
+                    "S": "02codebuild/automated-tests-buildspec.yml"
+                  },
+                  "GammaPerformanceTestRepository": {
+                    "S": "automated-tests"
+                  },
+                  "RunGammaPerformanceTests": {
+                    "S": "true"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Prod": {
+        "M": {
+          "DeployProd": {
+            "S": "false"
+          },
+          "ManualApprovalProd": {
+            "S": "<email-address>"
+          },
+          "ProdAwsAccountId": {
+            "S": "<prod-aws-account-id>"
+          }
+        }
+      }
+    }
+  }
+}

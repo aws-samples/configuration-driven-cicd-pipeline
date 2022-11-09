@@ -1,0 +1,1029 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+    **WARNING** Template to create the Dynamic Codepipeline and related resources. You will be billed for the AWS resources used if you create a stack from this template.
+
+Parameters:
+    DeployAlpha:
+        Description: Alpha Deployment Flag
+        Type: String
+        Default: true
+    DeployBeta:
+        Description: Beta Deployment Flag
+        Type: String
+        Default: true
+    DeployGamma:
+        Description: Gamma Deployment Flag
+        Type: String
+        Default: true
+    DeployProd:
+        Description: Prod Deployment Flag
+        Type: String
+        Default: true
+    AlphaAwsAccountId:
+        Description: AWS account ID for development account
+        Type: String
+        AllowedPattern: (\d{12}|^$)
+        ConstraintDescription: Must be an AWS account ID
+        Default: ''
+    AlphaChildAccountDeployerRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    AlphaChildAccountFormationRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    BetaAwsAccountId:
+        Description: AWS account ID for production account
+        Type: String
+        AllowedPattern: (\d{12}|^$)
+        ConstraintDescription: Must be an AWS account ID
+        Default: ''
+    BetaChildAccountDeployerRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    BetaChildAccountFormationRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    GammaAwsAccountId:
+        Description: AWS account ID for production account
+        Type: String
+        AllowedPattern: (\d{12}|^$)
+        ConstraintDescription: Must be an AWS account ID
+        Default: ''
+    GammaChildAccountDeployerRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    GammaChildAccountFormationRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    ProdAwsAccountId:
+        Description: AWS account ID for production account
+        Type: String
+        AllowedPattern: (\d{12}|^$)
+        ConstraintDescription: Must be an AWS account ID
+        Default: ''
+    ProdChildAccountFormationRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    ProdChildAccountDeployerRoleArn:
+        Description: ARN of the Alpha Account Role
+        Type: String
+        Default: ''
+    GammaPerformanceTestBuildImage:
+        Description: Docker Build image used in CodeBuild
+        Type: String
+        Default: aws/codebuild/nodejs:10.1.0
+    RepoName:
+        Type: String
+        Description: Name of the repository for which Code Pipeline is configured
+        Default: 'wrap-repo'
+    RepoTag:
+        Description: Repository branch tag
+        Type: String
+        Default: 'test'
+    PipelineName:
+        Description: The name to provide the pipeline
+        Type: String
+    AlphaGuiTestBuildSpec:
+        Type: String
+        Description: The build spec file name to be used in CodeBuild
+        Default: ''
+    RunAlphaGuiTests:
+        Type: String
+        Description: Boolean to run automated tests or not
+        Default: 'false'
+    AlphaGuiTestRepository:
+        Description: Name of the test repository
+        Type: String
+        Default: ''
+    AlphaGuiTestBranch:
+        Description: Name of the test repository branch to pull the code from
+        Type: String
+        Default: ''
+    AlphaGuiTestBuildImage:
+        Type: String
+        Description: Build image used by CodeBuild for GUI testing
+        Default: ''
+    RunAlphaBackendTests:
+        Type: String
+        Description: Boolean to run automated tests or not
+        Default: 'false'
+    AlphaBackendTestRepository:
+        Description: Name of the test repository
+        Type: String
+        Default: ''
+    AlphaBackendTestBranch:
+        Description: Name of the test repository branch to pull the code from
+        Type: String
+        Default: ''
+    AlphaBackendTestBuildSpec:
+        Type: String
+        Description: The build spec file name to be used in CodeBuild
+        Default: buildspec.yml
+    AlphaBackendTestBuildImage:
+        Type: String
+        Description: Build image used by CodeBuild for GUI testing
+        Default: 'aws/codebuild/standard:3.0'
+    RunBetaIntegrationTests:
+        Type: String
+        Description: Boolean to run Beta integration tests or not
+        Default: 'false'
+    RunBetaLoadTests:
+        Type: String
+        Description: Boolean to run Beta load tests or not
+        Default: 'false'
+    BetaIntegrationTestRepository:
+        Description: Name of the test repository
+        Type: String
+        Default: ''
+    BetaIntegrationTestBranch:
+        Description: Name of the test repository branch to pull the code from
+        Type: String
+        Default: ''
+    BetaIntegrationTestBuildSpec:
+        Type: String
+        Description: The build spec file name to be used in CodeBuild
+        Default: buildspec.yml
+    BetaIntegrationTestBuildImage:
+        Type: String
+        Description: Build image used by CodeBuild for GUI testing
+        Default: 'aws/codebuild/nodejs:10.1.0'
+    BetaLoadTestRepository:
+        Description: Name of the test repository
+        Type: String
+        Default: ''
+    BetaLoadTestBranch:
+        Description: Name of the test repository branch to pull the code from
+        Type: String
+        Default: ''
+    BetaLoadTestBuildSpec:
+        Type: String
+        Description: The build spec file name to be used in CodeBuild
+        Default: buildspec.yml
+    BuildSpecFile:
+        Type: String
+        Description: The build spec file name to be used in CodeBuild
+        Default: buildspec.yml
+    BuildImage:
+        Type: String
+        Description: Build image used by CodeBuild 
+        Default: aws/codebuild/standard:3.0
+    GammaPerformanceTestBuildSpec:
+        Type: String
+        Description: The build spec file name to be used in CodeBuild
+        Default: buildspec.yml
+    BetaLoadTestBuildImage:
+        Type: String
+        Description: Build image used by CodeBuild for GUI testing
+        Default: 'aws/codebuild/standard:3.0'
+    RunGammaPerformanceTests:
+        Type: String
+        Description: Boolean to run Gamma integration tests or not
+        Default: 'false'
+    GammaPerformanceTestRepository:
+        Description: Name of the test repository
+        Type: String
+        Default: ''
+    GammaPerformanceTestBranch:
+        Description: Name of the test repository branch to pull the code from
+        Type: String
+        Default: ''
+    ManualApprovalAlpha:
+        Description: Email ID 
+        Type: String
+        Default: 'false'
+    ManualApprovalBeta:
+        Description: Email ID 
+        Type: String
+        Default: 'false'
+    ManualApprovalGamma:
+        Description: Email ID 
+        Type: String
+        Default: 'false'
+    ManualApprovalProd:
+        Description: Email ID 
+        Type: String
+        Default: 'false'
+Conditions:
+    IsAlphaDeployment: !Equals [!Ref DeployAlpha, 'true']
+    IsBetaDeployment: !Equals [!Ref DeployBeta, 'true']
+    IsGammaDeployment: !Equals [!Ref DeployGamma, 'true']
+    IsProdDeployment: !Equals [!Ref DeployProd, 'true']
+    IsAlphaDeploymentApproval: !And [!Equals [!Ref DeployAlpha, 'true'], !Not [!Equals [!Ref ManualApprovalAlpha, 'false' ]]]
+    IsBetaDeploymentApproval: !And [!Equals [!Ref DeployBeta, 'true'], !Not [!Equals [!Ref ManualApprovalBeta, 'false' ]]]
+    IsGammaDeploymentApproval: !And [!Equals [!Ref DeployGamma, 'true'], !Not [!Equals [!Ref ManualApprovalGamma, 'false' ]]]
+    IsProdDeploymentApproval: !And [!Equals [!Ref DeployProd, 'true'], !Not [!Equals [!Ref ManualApprovalProd, 'false' ]]]
+    NotAlpha: !Not
+        - !Condition IsAlphaDeployment
+    NotBeta: !Not
+        - !Condition IsBetaDeployment
+    NotGamma: !Not
+        - !Condition IsGammaDeployment
+    NotProd: !Not
+        - !Condition IsProdDeployment
+
+    IsBranchBuild: !And
+        - !Condition NotAlpha
+        - !Condition NotBeta
+        - !Condition NotGamma
+        - !Condition NotProd
+    RunAlphaGuiTests: !And
+        - !Equals [!Ref RunAlphaGuiTests, 'true']
+        - !Condition IsAlphaDeployment
+    RunAlphaBackendTests: !And
+        - !Equals [!Ref RunAlphaBackendTests, 'true']
+        - !Condition IsAlphaDeployment
+    RunBetaIntegrationTests: !And
+        - !Equals [!Ref RunBetaIntegrationTests, 'true']
+        - !Condition IsBetaDeployment
+    RunBetaLoadTests: !And
+        - !Equals [!Ref RunBetaLoadTests, 'true']
+        - !Condition IsBetaDeployment
+    RunGammaPerformanceTests: !And
+        - !Equals [!Ref RunGammaPerformanceTests, 'true']
+        - !Condition IsGammaDeployment
+
+Resources:
+
+    PipelineServiceRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                    -   Effect: Allow
+                        Principal:
+                            Service:
+                                - codepipeline.amazonaws.com
+                                - codebuild.amazonaws.com
+                        Action: sts:AssumeRole
+            Policies:
+                -   PolicyName: PiplelinePolicy
+                    PolicyDocument:
+                        Version: '2012-10-17'
+                        Statement:
+                            -   Resource: '*'
+                                Effect: Allow
+                                Action:
+                                    - codecommit:GetBranch
+                                    - codecommit:GetCommit
+                                    - codecommit:UploadArchive
+                                    - codecommit:GetUploadArchiveStatus
+                                    - codecommit:CancelUploadArchive
+                                    - codebuild:StartBuild
+                                    - codebuild:BatchGetBuilds
+                                    - codebuild:CreateReportGroup
+                                    - codebuild:CreateReport
+                                    - codebuild:UpdateReport
+                                    - codebuild:BatchPutTestCases
+                                    - codepipeline:Get*
+                                    - sts:GetServiceBearerToken
+                                    - sts:AssumeRole
+                                    - iam:ListRoles
+                                    - iam:PassRole
+                                    - logs:CreateLogGroup
+                                    - logs:CreateLogStream
+                                    - logs:PutLogEvents
+                                    - cloudformation:ListExports
+                                    - cloudformation:DescribeStacks
+                                    - cloudformation:GetTemplate
+                                    - cloudformation:CreateChangeSet
+                                    - cloudformation:DescribeChangeSet
+                                    - cloudformation:ExecuteChangeSet
+                                    - cloudformation:DescribeStackEvents
+                                    - sns:Publish
+                                    - lambda:Invoke*
+                                    - Lambda:List* 
+                                    - kms:CreateKey
+                            -   Resource: !GetAtt KMSKey.Arn
+                                Effect: Allow
+                                Action:                                   
+                                    - kms:Encrypt
+                                    - kms:Decrypt
+                                    - kms:ReEncrypt*
+                                    - kms:GenerateDataKey*
+                                    - kms:DescribeKey
+                            -   Resource: !Sub 'arn:${AWS::Partition}:s3:::${ArtifactStoreS3Location}/*'
+                                Effect: Allow
+                                Action:
+                                    - s3:PutObject
+                                    - s3:GetObject
+
+    ArtifactStoreS3Location:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Retain
+        Properties:
+            PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true
+            BucketEncryption: 
+                ServerSideEncryptionConfiguration: 
+                - ServerSideEncryptionByDefault:
+                    SSEAlgorithm: aws:kms
+                    KMSMasterKeyID: !GetAtt KMSKey.Arn
+
+    ArtifactBucketPolicy: 
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket: !Ref ArtifactStoreS3Location
+            PolicyDocument:
+                Statement:
+                -
+                    Action:
+                        - s3:ListBucket
+                        - s3:*Object
+                    Effect: Allow
+                    Resource:
+                        - Fn::Sub:
+                            - "arn:${AWS::Partition}:s3:::${ArtifactBucket}/*"
+                            - ArtifactBucket: !Ref ArtifactStoreS3Location
+                        - Fn::Sub:
+                            - "arn:${AWS::Partition}:s3:::${ArtifactBucket}"
+                            - ArtifactBucket: !Ref ArtifactStoreS3Location
+                    Principal:
+                        AWS:
+                            - !Ref AlphaChildAccountFormationRoleArn
+                            - !Ref BetaChildAccountFormationRoleArn
+                            - !Ref GammaChildAccountFormationRoleArn
+                            - !Ref ProdChildAccountFormationRoleArn
+                            - !Ref AlphaChildAccountDeployerRoleArn
+                            - !Ref BetaChildAccountDeployerRoleArn
+                            - !Ref GammaChildAccountDeployerRoleArn
+                            - !Ref ProdChildAccountDeployerRoleArn
+                            - !GetAtt CodeCheckoutRole.Arn
+
+    DynamicCodePipeline:
+        Type: AWS::CodePipeline::Pipeline
+        Properties:
+            Name: !Ref PipelineName
+            RoleArn: !GetAtt PipelineServiceRole.Arn
+            Stages:
+                -   Name: Source
+                    Actions:
+                        -   Name: ApplicationRepo
+                            Namespace: 'SourceArtifacts'
+                            RunOrder: 1
+                            ActionTypeId:
+                                Category: Source
+                                Owner: AWS
+                                Provider: CodeCommit
+                                Version: '1'
+                            Configuration:
+                                RepositoryName: !Ref RepoName
+                                BranchName: !Ref RepoTag
+                            OutputArtifacts:
+                                -   Name: Source
+                        - !If
+                            -   RunAlphaGuiTests
+                            -   Name: AlphaGuiTestRepo
+                                Namespace: 'AlphaGuiTestArtifacts'
+                                ActionTypeId:
+                                    Category: Source
+                                    Owner: AWS
+                                    Provider: CodeCommit
+                                    Version: '1'
+                                Configuration:
+                                    RepositoryName: !Ref AlphaGuiTestRepository
+                                    BranchName: !Ref AlphaGuiTestBranch
+                                    PollForSourceChanges: false
+                                OutputArtifacts:
+                                    -   Name: AlphaGuiOutputArtifact
+                            -   !Ref AWS::NoValue
+                        - !If
+                            -   RunAlphaBackendTests
+                            -   Name: AlphaBackendTestRepo
+                                Namespace: 'AlphaBackendTestArtifacts'
+                                ActionTypeId:
+                                    Category: Source
+                                    Owner: AWS
+                                    Provider: CodeCommit
+                                    Version: '1'
+                                Configuration:
+                                    RepositoryName: !Ref AlphaBackendTestRepository
+                                    BranchName: !Ref AlphaBackendTestBranch
+                                    PollForSourceChanges: false
+                                OutputArtifacts:
+                                    -   Name: AlphaBackendOutputArtifact
+                            -   !Ref AWS::NoValue
+                        - !If
+                            -   RunBetaIntegrationTests
+                            -   Name: BetaIntegrationTestRepo
+                                Namespace: 'BetaIntegrationTestArtifacts'
+                                ActionTypeId:
+                                    Category: Source
+                                    Owner: AWS
+                                    Provider: CodeCommit
+                                    Version: '1'
+                                Configuration:
+                                    RepositoryName: !Ref BetaIntegrationTestRepository
+                                    BranchName: !Ref BetaIntegrationTestBranch
+                                    PollForSourceChanges: false
+                                OutputArtifacts:
+                                    -   Name: BetaIntegrationOutputArtifact
+                            -   !Ref AWS::NoValue
+                        - !If
+                            -   RunBetaLoadTests
+                            -   Name: BetaLoadTestRepo
+                                Namespace: 'BetaLoadTestArtifacts'
+                                ActionTypeId:
+                                    Category: Source
+                                    Owner: AWS
+                                    Provider: CodeCommit
+                                    Version: '1'
+                                Configuration:
+                                    RepositoryName: !Ref BetaLoadTestRepository
+                                    BranchName: !Ref BetaLoadTestBranch
+                                    PollForSourceChanges: false
+                                OutputArtifacts:
+                                    -   Name: BetaLoadOutputArtifact
+                            -   !Ref AWS::NoValue
+                        - !If
+                            -   RunGammaPerformanceTests
+                            -   Name: GammaPerformanceTestRepo
+                                Namespace: 'GammaPerformanceTestArtifacts'
+                                ActionTypeId:
+                                    Category: Source
+                                    Owner: AWS
+                                    Provider: CodeCommit
+                                    Version: '1'
+                                Configuration:
+                                    RepositoryName: !Ref GammaPerformanceTestRepository
+                                    BranchName: !Ref GammaPerformanceTestBranch
+                                    PollForSourceChanges: false
+                                OutputArtifacts:
+                                    -   Name: GammaPerformanceOutputArtifact
+                            -   !Ref AWS::NoValue
+                -   Name: BuildArtifact
+                    Actions:
+                        -   Name: ApplicationBuild
+                            ActionTypeId:
+                                Category: Build
+                                Owner: AWS
+                                Version: 1
+                                Provider: CodeBuild
+                            Configuration:
+                                ProjectName: !Ref CodeBuildProject
+                            RunOrder: 1
+                            InputArtifacts:
+                                -   Name: Source
+                            OutputArtifacts:
+                                -   Name: BuildOutput
+                -   !If
+                    -   IsAlphaDeploymentApproval
+                    -   Name: AlphaDeploymentApproval
+                        Actions:
+                            -   Name: AlphaApproval 
+                                ActionTypeId:
+                                    Category: Approval
+                                    Owner: AWS
+                                    Version: '1'
+                                    Provider: Manual
+                                Configuration:
+                                    NotificationArn: !Ref AlphaApprovalSNSTopic
+                                InputArtifacts: []
+                                OutputArtifacts: []
+                                RunOrder: 1   
+                    -   !Ref AWS::NoValue 
+                -   !If
+                    -   IsAlphaDeployment
+                    -   Name: BuildAndDeployToAlpha
+                        Actions:
+                            -   Name: CreateAlphaChangeSet
+                                ActionTypeId:
+                                    Category: Deploy
+                                    Owner: AWS
+                                    Version: 1
+                                    Provider: CloudFormation
+                                Configuration:
+                                    ChangeSetName: !Sub ${PipelineName}-alpha
+                                    ActionMode: CHANGE_SET_REPLACE
+                                    StackName: !Sub ${PipelineName}-alpha-stack
+                                    Capabilities: CAPABILITY_NAMED_IAM
+                                    TemplatePath: BuildOutput::packagedtemplate.yaml
+                                    RoleArn: !Ref AlphaChildAccountDeployerRoleArn
+                                InputArtifacts:
+                                    -   Name: BuildOutput
+                                RunOrder: 1
+                                RoleArn: !Ref AlphaChildAccountFormationRoleArn
+                            -   Name: DeployAlphaChangeSet
+                                ActionTypeId:
+                                    Category: Deploy
+                                    Owner: AWS
+                                    Version: 1
+                                    Provider: CloudFormation
+                                Configuration:
+                                    ChangeSetName: !Sub ${PipelineName}-alpha
+                                    ActionMode: CHANGE_SET_EXECUTE
+                                    StackName: !Sub ${PipelineName}-alpha-stack
+                                    RoleArn: !Ref AlphaChildAccountDeployerRoleArn
+                                InputArtifacts:
+                                    -   Name: BuildOutput
+                                RunOrder: 2
+                                RoleArn: !Ref AlphaChildAccountFormationRoleArn
+                            - !If
+                                - RunAlphaGuiTests
+                                -   Name: RunAlphaGuiTests
+                                    RunOrder: 3
+                                    InputArtifacts:
+                                        -   Name: AlphaGuiOutputArtifact
+                                    ActionTypeId:
+                                        Category: Build
+                                        Provider: CodeBuild
+                                        Owner: AWS
+                                        Version: '1'
+                                    Configuration:
+                                        ProjectName: !Ref AlphaGuiTestProject
+                                - !Ref AWS::NoValue
+                            - !If
+                                - RunAlphaBackendTests
+                                -   Name: RunAlphaBackendTests
+                                    RunOrder: 3
+                                    InputArtifacts:
+                                        -   Name: AlphaBackendOutputArtifact
+                                    ActionTypeId:
+                                        Category: Build
+                                        Provider: CodeBuild
+                                        Owner: AWS
+                                        Version: '1'
+                                    Configuration:
+                                        ProjectName: !Ref AlphaBackendTestProject
+                                - !Ref AWS::NoValue
+                    -   !Ref AWS::NoValue
+                -   !If
+                    -   IsBetaDeploymentApproval
+                    -   Name: BetaDeploymentApproval
+                        Actions:
+                            -   Name: BetaApproval 
+                                ActionTypeId:
+                                    Category: Approval
+                                    Owner: AWS
+                                    Version: '1'
+                                    Provider: Manual
+                                Configuration:
+                                    NotificationArn: !Ref BetaApprovalSNSTopic
+                                InputArtifacts: []
+                                OutputArtifacts: []
+                                RunOrder: 1   
+                    -   !Ref AWS::NoValue 
+                -   !If
+                    -   IsBetaDeployment
+                    -   Name: BuildAndDeployToBeta
+                        Actions:
+                          -   Name: CreateBetaChangeSet
+                              ActionTypeId:
+                                  Category: Deploy
+                                  Owner: AWS
+                                  Version: 1
+                                  Provider: CloudFormation
+                              Configuration:
+                                  ChangeSetName: !Sub ${PipelineName}-beta
+                                  ActionMode: CHANGE_SET_REPLACE
+                                  StackName: !Sub ${PipelineName}-beta-stack
+                                  Capabilities: CAPABILITY_NAMED_IAM
+                                  TemplatePath: BuildOutput::packagedtemplate.yaml
+                                  RoleArn: !Ref BetaChildAccountDeployerRoleArn
+                              InputArtifacts:
+                                  -   Name: BuildOutput
+                              RunOrder: 1
+                              RoleArn: !Ref BetaChildAccountFormationRoleArn
+                          -   Name: DeployBetaChangeSet
+                              ActionTypeId:
+                                  Category: Deploy
+                                  Owner: AWS
+                                  Version: 1
+                                  Provider: CloudFormation
+                              Configuration:
+                                  ChangeSetName: !Sub ${PipelineName}-beta
+                                  ActionMode: CHANGE_SET_EXECUTE
+                                  StackName: !Sub ${PipelineName}-beta-stack                                  
+                                  RoleArn: !Ref BetaChildAccountDeployerRoleArn
+                              InputArtifacts:
+                                  -   Name: BuildOutput
+                              RunOrder: 2
+                              RoleArn: !Ref BetaChildAccountFormationRoleArn
+                          - !If
+                              - RunBetaIntegrationTests
+                              -   Name: RunBetaIntegrationTests
+                                  RunOrder: 3
+                                  InputArtifacts:
+                                      -   Name: BetaIntegrationOutputArtifact
+                                  ActionTypeId:
+                                      Category: Build
+                                      Provider: CodeBuild
+                                      Owner: AWS
+                                      Version: '1'
+                                  Configuration:
+                                      ProjectName: !Ref IntegrationBetaTestsProject
+                              - !Ref AWS::NoValue
+                          - !If
+                              - RunBetaLoadTests
+                              -   Name: RunBetaLoadTests
+                                  RunOrder: 3
+                                  InputArtifacts:
+                                      -   Name: BetaLoadOutputArtifact
+                                  ActionTypeId:
+                                      Category: Build
+                                      Provider: CodeBuild
+                                      Owner: AWS
+                                      Version: '1'
+                                  Configuration:
+                                      ProjectName: !Ref BetaLoadTestProject
+                              - !Ref AWS::NoValue
+                    -   !Ref AWS::NoValue
+                -   !If
+                    -   IsGammaDeploymentApproval
+                    -   Name: GammaDeploymentApproval
+                        Actions:
+                            -   Name: GammaApproval 
+                                ActionTypeId:
+                                    Category: Approval
+                                    Owner: AWS
+                                    Version: '1'
+                                    Provider: Manual
+                                Configuration:
+                                    NotificationArn: !Ref GammaApprovalSNSTopic
+                                InputArtifacts: []
+                                OutputArtifacts: []
+                                RunOrder: 1   
+                    - !Ref AWS::NoValue 
+                -   !If
+                    -   IsGammaDeployment
+                    -   Name: BuildAndDeployToGamma
+                        Actions:
+                            -   Name: CreateGammaChangeSet
+                                ActionTypeId:
+                                    Category: Deploy
+                                    Owner: AWS
+                                    Version: 1
+                                    Provider: CloudFormation
+                                Configuration:
+                                    ChangeSetName: !Sub ${PipelineName}-gamma
+                                    ActionMode: CHANGE_SET_REPLACE
+                                    StackName: !Sub ${PipelineName}-gamma-stack
+                                    Capabilities: CAPABILITY_NAMED_IAM
+                                    TemplatePath: BuildOutput::packagedtemplate.yaml
+                                    RoleArn: !Ref GammaChildAccountDeployerRoleArn
+                                InputArtifacts:
+                                    -   Name: BuildOutput
+                                RunOrder: 1
+                                RoleArn: !Ref GammaChildAccountFormationRoleArn
+                            -   Name: DeployGammaChangeSet
+                                ActionTypeId:
+                                    Category: Deploy
+                                    Owner: AWS
+                                    Version: 1
+                                    Provider: CloudFormation
+                                Configuration:
+                                    ChangeSetName: !Sub ${PipelineName}-gamma
+                                    ActionMode: CHANGE_SET_EXECUTE
+                                    StackName: !Sub ${PipelineName}-gamma-stack                                    
+                                    RoleArn: !Ref GammaChildAccountDeployerRoleArn
+                                InputArtifacts:
+                                    -   Name: BuildOutput
+                                RunOrder: 2
+                                RoleArn: !Ref GammaChildAccountFormationRoleArn
+                            - !If
+                                - RunGammaPerformanceTests
+                                -   Name: RunGammaPerformanceTests
+                                    RunOrder: 3
+                                    InputArtifacts:
+                                        -   Name: GammaPerformanceOutputArtifact
+                                    ActionTypeId:
+                                        Category: Build
+                                        Provider: CodeBuild
+                                        Owner: AWS
+                                        Version: '1'
+                                    Configuration:
+                                        ProjectName: !Ref PerformanceGammaTestsProject
+                                - !Ref AWS::NoValue
+                    -   !Ref AWS::NoValue
+                -   !If
+                    -   IsProdDeploymentApproval
+                    -   Name: ProdDeploymentApproval
+                        Actions:
+                            -   Name: ProdApproval 
+                                ActionTypeId:
+                                    Category: Approval
+                                    Owner: AWS
+                                    Version: '1'
+                                    Provider: Manual
+                                Configuration:
+                                    NotificationArn: !Ref ProdApprovalSNSTopic
+                                InputArtifacts: []
+                                OutputArtifacts: []
+                                RunOrder: 1   
+                    - !Ref AWS::NoValue 
+                -   !If
+                    -   IsProdDeployment
+                    -   Name: BuildAndDeployToProd
+                        Actions:
+                            -   Name: CreateProdChangeSet
+                                ActionTypeId:
+                                    Category: Deploy
+                                    Owner: AWS
+                                    Version: 1
+                                    Provider: CloudFormation
+                                Configuration:
+                                    ChangeSetName: !Sub ${PipelineName}-prod
+                                    ActionMode: CHANGE_SET_REPLACE
+                                    StackName: !Sub ${PipelineName}-prod-stack
+                                    Capabilities: CAPABILITY_NAMED_IAM
+                                    TemplatePath: BuildOutput::packagedtemplate.yaml
+                                    RoleArn: !Ref ProdChildAccountDeployerRoleArn
+                                InputArtifacts:
+                                    -   Name: BuildOutput
+                                RunOrder: 1
+                                RoleArn: !Ref ProdChildAccountFormationRoleArn
+                            -   Name: DeployProdChangeSet
+                                ActionTypeId:
+                                    Category: Deploy
+                                    Owner: AWS
+                                    Version: 1
+                                    Provider: CloudFormation
+                                Configuration:
+                                    ChangeSetName: !Sub ${PipelineName}-prod
+                                    ActionMode: CHANGE_SET_EXECUTE
+                                    StackName: !Sub ${PipelineName}-prod-stack
+                                    RoleArn: !Ref ProdChildAccountDeployerRoleArn
+                                InputArtifacts:
+                                    -   Name: BuildOutput
+                                RunOrder: 2
+                                RoleArn: !Ref ProdChildAccountFormationRoleArn
+                    -   !Ref AWS::NoValue
+            ArtifactStore:
+                Type: S3
+                Location: !Ref ArtifactStoreS3Location
+                EncryptionKey:
+                    Id: !GetAtt KMSKey.Arn
+                    Type: KMS
+
+    KMSKey:
+        Type: AWS::KMS::Key
+        Properties:
+            EnableKeyRotation: true
+            KeyPolicy:
+                Version: "2012-10-17"
+                Id: !Ref AWS::StackName
+                Statement:
+                -
+                    Sid: Allows admin of the key
+                    Effect: Allow
+                    Principal:
+                        AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+                    Action:
+                        - "kms:Create*"
+                        - "kms:Describe*"
+                        - "kms:Enable*"
+                        - "kms:List*"
+                        - "kms:Put*"
+                        - "kms:Update*"
+                        - "kms:Revoke*"
+                        - "kms:Disable*"
+                        - "kms:Get*"
+                        - "kms:Delete*"
+                        - "kms:ScheduleKeyDeletion"
+                        - "kms:CancelKeyDeletion"
+                    Resource: "*"
+                -
+                    Sid: Allow use of the key
+                    Effect: Allow
+                    Principal:
+                        AWS:
+                            - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+                            - !Sub arn:${AWS::Partition}:iam::${AlphaAwsAccountId}:root
+                            - !Sub arn:${AWS::Partition}:iam::${BetaAwsAccountId}:root
+                            - !Sub arn:${AWS::Partition}:iam::${GammaAwsAccountId}:root
+                            - !Sub arn:${AWS::Partition}:iam::${ProdAwsAccountId}:root
+                    Action:
+                        - kms:Encrypt
+                        - kms:Decrypt
+                        - kms:ReEncrypt*
+                        - kms:GenerateDataKey*
+                        - kms:DescribeKey                        
+                    Resource: "*"
+
+    CodeCheckoutRole: 
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                -
+                    Effect: Allow
+                    Principal:
+                        AWS:
+                            - !Sub ${AWS::AccountId}
+                    Action:
+                        - sts:AssumeRole
+            Path: /
+            Policies:
+                -   PolicyName: CodeCheckoutPolicy
+                    PolicyDocument:
+                        Version: '2012-10-17'
+                        Statement:
+                            -   Action:
+                                    - s3:ListBucket
+                                    - s3:*Object
+                                Effect: Allow
+                                Resource:
+                                    - Fn::Sub:
+                                        - "arn:${AWS::Partition}:s3:::${ArtifactBucket}/*"
+                                        - ArtifactBucket: !Ref ArtifactStoreS3Location
+                                    - Fn::Sub:
+                                        - "arn:${AWS::Partition}:s3:::${ArtifactBucket}"
+                                        - ArtifactBucket: !Ref ArtifactStoreS3Location
+                            -   Effect: Allow
+                                Action:
+                                    - kms:Encrypt
+                                    - kms:Decrypt
+                                    - kms:ReEncrypt*
+                                    - kms:GenerateDataKey*
+                                    - kms:DescribeKey
+                                Resource: !GetAtt KMSKey.Arn
+
+    CodeBuildProject:
+        Type: AWS::CodeBuild::Project        
+        Properties:
+            Name: !Sub ${PipelineName}-codebuild-project
+            Artifacts:
+                Type: CODEPIPELINE
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: !Ref BuildSpecFile
+            Environment:
+                ComputeType: BUILD_GENERAL1_SMALL
+                Type: LINUX_CONTAINER
+                Image: !Ref BuildImage
+                EnvironmentVariables:
+                    -   Name: ARTIFACT_BUCKET
+                        Value: !Ref ArtifactStoreS3Location 
+            ServiceRole: !GetAtt PipelineServiceRole.Arn
+            EncryptionKey: !GetAtt KMSKey.Arn
+
+    AlphaGuiTestProject:
+        Condition: RunAlphaGuiTests
+        Type: AWS::CodeBuild::Project
+        Properties:
+            Artifacts:
+                Type: CODEPIPELINE
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: !Ref AlphaGuiTestBuildSpec
+            Environment:
+                ComputeType: BUILD_GENERAL1_SMALL
+                Type: LINUX_CONTAINER
+                Image: !Ref AlphaGuiTestBuildImage
+                EnvironmentVariables:
+                    -   Name: CHILD_ACCOUNT_ROLE_ARN
+                        Value: !Ref AlphaChildAccountFormationRoleArn
+                    -   Name: S3_BUCKET
+                        Type: PLAINTEXT
+                        Value: !Ref ArtifactStoreS3Location
+                    -   Name: STACK_NAME
+                        Value: !Sub ${PipelineName}-alpha-stack
+            ServiceRole: !GetAtt PipelineServiceRole.Arn
+
+    AlphaBackendTestProject:
+        Condition: RunAlphaBackendTests
+        Type: AWS::CodeBuild::Project
+        Properties:
+            Artifacts:
+                Type: CODEPIPELINE
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: !Ref AlphaBackendTestBuildSpec
+            Environment:
+                ComputeType: BUILD_GENERAL1_SMALL
+                Type: LINUX_CONTAINER
+                Image: !Ref AlphaBackendTestBuildImage
+                EnvironmentVariables:
+                    -   Name: STAGE
+                        Value: alpha
+                    -   Name: REGION
+                        Value: !Ref AWS::Region
+                    -   Name: CHILD_ACCOUNT_ROLE_ARN
+                        Value: !Ref AlphaChildAccountFormationRoleArn
+                    -   Name: S3_BUCKET
+                        Type: PLAINTEXT
+                        Value: !Ref ArtifactStoreS3Location
+                    -   Name: STACK_NAME
+                        Value: !Sub ${PipelineName}-alpha-stack
+            ServiceRole: !GetAtt PipelineServiceRole.Arn
+
+    IntegrationBetaTestsProject:
+        Condition: RunBetaIntegrationTests
+        Type: AWS::CodeBuild::Project
+        Properties:
+            Artifacts:
+                Type: CODEPIPELINE
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: !Ref BetaIntegrationTestBuildSpec
+            Environment:
+                ComputeType: BUILD_GENERAL1_SMALL
+                Type: LINUX_CONTAINER
+                Image: !Ref BetaIntegrationTestBuildImage
+                EnvironmentVariables:
+                    -   Name: CHILD_ACCOUNT_ROLE_ARN
+                        Value: !Ref BetaChildAccountFormationRoleArn
+                    -   Name: S3_BUCKET
+                        Type: PLAINTEXT
+                        Value: !Ref ArtifactStoreS3Location
+                    -   Name: STACK_NAME
+                        Value: !Sub ${PipelineName}-beta-stack
+            ServiceRole: !GetAtt PipelineServiceRole.Arn
+
+    BetaLoadTestProject:
+        Condition: RunBetaLoadTests
+        Type: AWS::CodeBuild::Project
+        Properties:
+            Artifacts:
+                Type: CODEPIPELINE
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: !Ref BetaLoadTestBuildSpec
+            Environment:
+                ComputeType: BUILD_GENERAL1_SMALL
+                Type: LINUX_CONTAINER
+                Image: !Ref BetaLoadTestBuildImage
+                EnvironmentVariables:
+                    -   Name: CHILD_ACCOUNT_ROLE_ARN
+                        Value: !Ref BetaChildAccountFormationRoleArn
+                    -   Name: S3_BUCKET
+                        Type: PLAINTEXT
+                        Value: !Ref ArtifactStoreS3Location
+                    -   Name: STACK_NAME
+                        Value: !Sub ${PipelineName}-beta-stack
+            ServiceRole: !GetAtt PipelineServiceRole.Arn
+
+    PerformanceGammaTestsProject:
+        Condition: RunGammaPerformanceTests
+        Type: AWS::CodeBuild::Project
+        Properties:
+            Artifacts:
+                Type: CODEPIPELINE
+            Source:
+                Type: CODEPIPELINE
+                BuildSpec: !Ref GammaPerformanceTestBuildSpec
+            Environment:
+                ComputeType: BUILD_GENERAL1_SMALL
+                Type: LINUX_CONTAINER
+                Image: !Ref GammaPerformanceTestBuildImage
+                EnvironmentVariables:
+                    -   Name: CHILD_ACCOUNT_ROLE_ARN
+                        Value: !Ref GammaChildAccountFormationRoleArn
+                    -   Name: S3_BUCKET
+                        Type: PLAINTEXT
+                        Value: !Ref ArtifactStoreS3Location
+                    -   Name: STACK_NAME
+                        Value: !Sub ${PipelineName}-gamma-stack
+            ServiceRole: !GetAtt PipelineServiceRole.Arn
+
+    AlphaApprovalSNSTopic:
+        Type: AWS::SNS::Topic
+        Condition: IsAlphaDeploymentApproval
+        Properties: 
+            DisplayName: !Sub ${PipelineName}-alpha-approval 
+            Subscription: 
+                -   Endpoint: !Ref ManualApprovalAlpha
+                    Protocol: email
+            TopicName: !Sub ${PipelineName}-alpha-approval
+
+    BetaApprovalSNSTopic:
+        Type: AWS::SNS::Topic
+        Condition: IsBetaDeploymentApproval
+        Properties: 
+            DisplayName: !Sub ${PipelineName}-beta-approval
+            Subscription: 
+                -   Endpoint: !Ref ManualApprovalBeta
+                    Protocol: email
+            TopicName: !Sub ${PipelineName}-beta-approval
+    
+    GammaApprovalSNSTopic:
+        Type: AWS::SNS::Topic
+        Condition: IsGammaDeploymentApproval
+        Properties: 
+            DisplayName: !Sub ${PipelineName}-gamma-approval
+            Subscription: 
+                -   Endpoint: !Ref ManualApprovalGamma
+                    Protocol: email
+            TopicName: !Sub ${PipelineName}-gamma-approval
+
+    ProdApprovalSNSTopic:
+        Type: AWS::SNS::Topic
+        Condition: IsProdDeploymentApproval
+        Properties: 
+            DisplayName: !Sub ${PipelineName}-prod-approval
+            Subscription: 
+                -   Endpoint: !Ref ManualApprovalProd
+                    Protocol: email
+            TopicName: !Sub ${PipelineName}-prod-approval

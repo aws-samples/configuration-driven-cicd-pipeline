@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - npm install -g newman
+      - yum install -y jq
+
+  pre_build:
+    commands:
+      - export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn ${CHILD_ACCOUNT_ROLE_ARN} --role-session-name AWSCLI-Session --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
+      - cd ./01postman
+      - ./update-postman-env-file.sh
+
+  build:
+    commands:
+      - echo Build started on `date` from dir `pwd`
+      - newman run PetStoreAPI.postman_collection.json --environment PetStoreAPIEnvironment.postman_environment.json -r junit
+
+reports:
+  JUnitReports:
+    files:
+      - '**/*'
+    base-directory: '01postman/newman'
